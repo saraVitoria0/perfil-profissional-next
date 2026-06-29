@@ -7,12 +7,13 @@ export default function AudioApp() {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const [audioIndex, setAudioIndex] = useState(0);
-  const [passo, setPasso] = useState(10);
+  const [tocando, setTocando] = useState(false);
+  const [volume, setVolume] = useState(1);
   const [mensagem, setMensagem] = useState(
-    "Defina o passo e use os controles do player."
+    "Selecione uma música e utilize os controles de áudio."
   );
 
-  function tocar() {
+  function tocarOuPausar() {
     const audio = audioRef.current;
 
     if (!audio) {
@@ -20,11 +21,18 @@ export default function AudioApp() {
       return;
     }
 
-    audio.play();
-    setMensagem("Áudio iniciado.");
+    if (audio.paused) {
+      audio.play();
+      setTocando(true);
+      setMensagem("Áudio em execução.");
+    } else {
+      audio.pause();
+      setTocando(false);
+      setMensagem("Áudio pausado.");
+    }
   }
 
-  function pausar() {
+  function alterarVolume(valor: number) {
     const audio = audioRef.current;
 
     if (!audio) {
@@ -32,122 +40,79 @@ export default function AudioApp() {
       return;
     }
 
-    audio.pause();
-    setMensagem("Áudio pausado.");
+    audio.volume = valor;
+    setVolume(valor);
+    setMensagem(`Volume alterado para ${Math.round(valor * 100)}%.`);
   }
 
-  function avancar() {
-    const audio = audioRef.current;
-
-    if (!audio) {
-      setMensagem("Áudio não encontrado.");
-      return;
-    }
-
-    const tempoAntes = audio.currentTime;
-    audio.currentTime = audio.currentTime + passo;
-
-    setMensagem(
-      `Avançou de ${tempoAntes.toFixed(1)}s para ${audio.currentTime.toFixed(
-        1
-      )}s usando passo de ${passo}s.`
-    );
-  }
-
-  function voltar() {
-    const audio = audioRef.current;
-
-    if (!audio) {
-      setMensagem("Áudio não encontrado.");
-      return;
-    }
-
-    const tempoAntes = audio.currentTime;
-    audio.currentTime = Math.max(0, audio.currentTime - passo);
-
-    setMensagem(
-      `Voltou de ${tempoAntes.toFixed(1)}s para ${audio.currentTime.toFixed(
-        1
-      )}s usando passo de ${passo}s.`
-    );
-  }
-
-  function proximaMusica() {
-    let novoIndex = audioIndex + 1;
-
-    if (novoIndex >= musics.length) {
-      novoIndex = 0;
-    }
-
-    setAudioIndex(novoIndex);
-    setMensagem("Próxima música selecionada.");
-  }
-
-  function musicaAnterior() {
-    let novoIndex = audioIndex - 1;
-
-    if (novoIndex < 0) {
-      novoIndex = musics.length - 1;
-    }
-
-    setAudioIndex(novoIndex);
-    setMensagem("Música anterior selecionada.");
+  function selecionarMusica(index: number) {
+    setAudioIndex(index);
+    setTocando(false);
+    setMensagem(`Música selecionada: ${musics[index].nome}.`);
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
+    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 px-6 py-10 text-white">
       <section className="mx-auto max-w-5xl">
-        <header className="mb-8 rounded-3xl bg-gradient-to-r from-blue-900 to-purple-900 p-8 shadow-xl">
-          <p className="mb-2 text-sm font-bold uppercase tracking-widest text-blue-200">
+        <header className="mb-8 rounded-3xl border border-white/10 bg-white/10 p-8 text-center shadow-2xl backdrop-blur">
+          <p className="mb-3 text-sm font-bold uppercase tracking-[0.3em] text-blue-300">
             Atividade Next.js
           </p>
 
-          <h1 className="text-4xl font-black">AudioApp com Controle de Passo</h1>
+          <h1 className="text-4xl font-black md:text-5xl">
+            Manipulação de Áudio
+          </h1>
 
-          <p className="mt-4 max-w-3xl text-slate-200">
-            Página criada para adicionar o estado <strong>passo</strong>, onde o
-            usuário define quantos segundos o áudio deve avançar ou voltar.
+          <p className="mx-auto mt-4 max-w-2xl text-slate-300">
+            Aplicação desenvolvida em Next.js para executar, pausar e manipular
+            o volume de arquivos de áudio.
           </p>
         </header>
 
-        <div className="grid gap-6 md:grid-cols-[300px_1fr]">
-          <aside className="rounded-3xl bg-white/10 p-5">
-            <h2 className="mb-4 text-2xl font-bold">Músicas</h2>
+        <div className="grid gap-8 md:grid-cols-[320px_1fr]">
+          <aside className="rounded-3xl border border-white/10 bg-white/10 p-5 shadow-xl">
+            <h2 className="mb-5 text-2xl font-bold">Músicas</h2>
 
             <div className="space-y-4">
               {musics.map((music, index) => (
                 <button
                   key={index}
                   type="button"
-                  onClick={() => {
-                    setAudioIndex(index);
-                    setMensagem(`Música selecionada: ${music.nome}`);
-                  }}
-                  className={`w-full rounded-2xl p-3 text-left ${
-                    audioIndex === index ? "bg-blue-600" : "bg-white/10"
+                  onClick={() => selecionarMusica(index)}
+                  className={`w-full rounded-2xl border p-4 text-left transition hover:scale-[1.02] ${
+                    audioIndex === index
+                      ? "border-blue-400 bg-blue-500/30"
+                      : "border-white/10 bg-white/5 hover:bg-white/10"
                   }`}
                 >
                   <img
                     src={music.imagem}
                     alt={music.nome}
-                    className="mb-3 h-32 w-full rounded-xl object-cover"
+                    className="mb-3 h-36 w-full rounded-xl object-cover"
                   />
 
-                  <strong>{music.nome}</strong>
+                  <p className="text-sm text-slate-400">Faixa {index + 1}</p>
+                  <h3 className="font-bold">{music.nome}</h3>
                 </button>
               ))}
             </div>
           </aside>
 
-          <section className="rounded-3xl bg-white p-6 text-slate-900 shadow-xl">
-            <h2 className="mb-4 text-center text-3xl font-black">
-              {musics[audioIndex].nome}
-            </h2>
+          <section className="rounded-3xl bg-white p-6 text-slate-900 shadow-2xl">
+            <div className="mb-6 text-center">
+              <p className="text-sm font-bold uppercase tracking-[0.25em] text-blue-700">
+                Tocando agora
+              </p>
+
+              <h2 className="mt-2 text-3xl font-black">
+                {musics[audioIndex].nome}
+              </h2>
+            </div>
 
             <img
               src={musics[audioIndex].imagem}
               alt={musics[audioIndex].nome}
-              className="mb-6 h-72 w-full rounded-2xl object-cover"
+              className="mb-6 h-72 w-full rounded-2xl object-cover shadow-lg"
             />
 
             <audio
@@ -156,80 +121,53 @@ export default function AudioApp() {
               src={musics[audioIndex].url}
               controls
               className="mb-6 w-full"
+              onPlay={() => setTocando(true)}
+              onPause={() => setTocando(false)}
             />
 
+            <button
+              type="button"
+              onClick={tocarOuPausar}
+              className={`mb-6 w-full rounded-2xl px-6 py-4 text-lg font-black text-white transition ${
+                tocando
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-green-600 hover:bg-green-700"
+              }`}
+            >
+              {tocando ? "Pausar áudio" : "Executar áudio"}
+            </button>
+
             <div className="mb-6 rounded-2xl bg-slate-100 p-5">
-              <label htmlFor="passo" className="mb-2 block font-bold">
-                Passo:
+              <label htmlFor="volume" className="mb-3 block text-lg font-bold">
+                Volume: {Math.round(volume * 100)}%
               </label>
 
               <input
-                id="passo"
-                type="number"
-                min={1}
-                value={passo}
-                onChange={(e) => setPasso(Number(e.target.value))}
-                className="w-28 rounded-xl border px-4 py-2 font-bold"
+                id="volume"
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={volume}
+                onChange={(e) => alterarVolume(Number(e.target.value))}
+                className="w-full"
               />
-
-              <span className="ml-3">segundos</span>
             </div>
 
-            <div className="mb-5 grid gap-3 md:grid-cols-2">
-              <button
-                type="button"
-                onClick={tocar}
-                className="rounded-xl bg-green-600 px-5 py-4 font-bold text-white"
-              >
-                Tocar
-              </button>
-
-              <button
-                type="button"
-                onClick={pausar}
-                className="rounded-xl bg-red-600 px-5 py-4 font-bold text-white"
-              >
-                Pausar
-              </button>
-
-              <button
-                type="button"
-                onClick={voltar}
-                className="rounded-xl bg-slate-800 px-5 py-4 font-bold text-white"
-              >
-                Voltar {passo}s
-              </button>
-
-              <button
-                type="button"
-                onClick={avancar}
-                className="rounded-xl bg-blue-700 px-5 py-4 font-bold text-white"
-              >
-                Avançar {passo}s
-              </button>
-            </div>
-
-            <div className="mb-5 grid gap-3 md:grid-cols-2">
-              <button
-                type="button"
-                onClick={musicaAnterior}
-                className="rounded-xl border px-5 py-4 font-bold"
-              >
-                Música anterior
-              </button>
-
-              <button
-                type="button"
-                onClick={proximaMusica}
-                className="rounded-xl border px-5 py-4 font-bold"
-              >
-                Próxima música
-              </button>
-            </div>
-
-            <p className="rounded-2xl bg-yellow-100 p-4 text-center font-bold text-yellow-900">
+            <div className="rounded-2xl bg-blue-50 p-5 text-center font-bold text-blue-900">
               {mensagem}
-            </p>
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-slate-200 p-5">
+              <h3 className="mb-2 text-xl font-bold">Descrição da atividade</h3>
+
+              <p className="leading-7 text-slate-700">
+                Este projeto utiliza o framework Next.js para manipular arquivos
+                de áudio. A aplicação permite executar e pausar o áudio por meio
+                de um botão e também alterar o volume utilizando um controle do
+                tipo range.
+              </p>
+            </div>
           </section>
         </div>
       </section>
